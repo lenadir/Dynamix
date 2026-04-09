@@ -1,0 +1,81 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+@{
+    var uri = Nav.ToBaseRelativePath(Nav.Uri).ToLowerInvariant();
+    bool isApp = uri.StartsWith("app/") || uri == "admin";
+}
+
+@if (isApp)
+{
+    <!-- App / Dashboard layout with sidebar -->
+    <nav class="dyn-nav">
+        <a href="/" class="dyn-nav__brand">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+            Dynamix
+        </a>
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <AuthorizeView>
+                <Authorized>
+                    <span style="font-size:.875rem; color:var(--text-light);">@context.User.Identity?.Name</span>
+                    <a href="/account/logout" class="dyn-nav__cta" style="font-size:.85rem;">Sign Out</a>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </nav>
+    <div class="app-layout">
+        <aside class="app-sidebar">
+            <div class="app-sidebar__header">
+                <h3>Dynamix ERP</h3>
+                <p>Demo Corporation Ltd.</p>
+            </div>
+            <ul class="app-sidebar__nav">
+                <li><a href="/app/dashboard" class="@(uri == "app/dashboard" ? "active" : "")">📊 Dashboard</a></li>
+                <li><a href="/app/sales" class="@(uri.StartsWith("app/sales") ? "active" : "")">💼 Sales Orders</a></li>
+                <li><a href="/app/sales/create" class="@(uri == "app/sales/create" ? "active" : "")">➕ New Order</a></li>
+                <li><a href="/app/finance" class="@(uri.StartsWith("app/finance") ? "active" : "")">📒 Journal Entries</a></li>
+                <li><a href="/admin" class="@(uri == "admin" ? "active" : "")">⚙️ Admin</a></li>
+            </ul>
+        </aside>
+        <main class="app-main">
+            @Body
+        </main>
+    </div>
+}
+else
+{
+    <!-- Marketing / Landing page layout -->
+    <nav class="dyn-nav">
+        <a href="/" class="dyn-nav__brand">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+            Dynamix
+        </a>
+        <ul class="dyn-nav__links">
+            <li><a href="/" class="@(uri == "" ? "active" : "")">Home</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/app/dashboard">Dashboard</a></li>
+        </ul>
+        <div style="display:flex; align-items:center; gap:1rem;">
+            <AuthorizeView>
+                <Authorized>
+                    <span style="font-size:.875rem; color:var(--text-light);">@context.User.Identity?.Name</span>
+                    <a href="/app/dashboard" class="dyn-nav__cta">Dashboard</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/account/login" style="font-size:.875rem; font-weight:500; color:var(--brand);">Sign In</a>
+                    <a href="/trial/sales" class="dyn-nav__cta">Try for Free</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </nav>
+    @Body
+    <footer class="footer">
+        <ul class="footer__links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/products">Products</a></li>
+            <li><a href="/app/dashboard">Dashboard</a></li>
+            <li><a href="/admin">Admin</a></li>
+        </ul>
+        <p>&copy; 2026 Dynamix ERP &mdash; Built with .NET 8, DDD &amp; Clean Architecture. MIT License.</p>
+    </footer>
+}

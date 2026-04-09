@@ -1,0 +1,347 @@
+﻿@page "/trial/finance"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<section class="section section--white" style="min-height:calc(100vh - var(--nav-height) - 200px);">
+    <div class="trial-container">
+        <div class="trial-header">
+            <div style="font-size:2rem; margin-bottom:.5rem;">📊</div>
+            <h2>Try Dynamix Finance</h2>
+            <p>See automated financial posting in action@(!_isAuthenticated ? " — create your account to get started." : " — in 3 steps.")</p>
+        </div>
+
+        <!-- ═══ Stepper ═══ -->
+        <div class="stepper">
+            @for (int i = 0; i < _steps.Length; i++)
+            {
+                var idx = i;
+                var state = idx < _currentStep ? "stepper__step--done"
+                          : idx == _currentStep ? "stepper__step--active" : "";
+                <div class="stepper__step @state">
+                    <div class="stepper__circle">
+                        @if (idx < _currentStep) { <span>✓</span> } else { @(idx + 1) }
+                    </div>
+                    <span class="stepper__label">@_steps[idx]</span>
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert--error">@_error</div>
+        }
+
+        @if (_currentStep == _successStep)
+        {
+            <!-- ═══ Success ═══ -->
+            <div style="text-align:center; padding:2rem 0;">
+                <div style="font-size:3rem; margin-bottom:1rem;">✅</div>
+                <h3 style="margin-bottom:.5rem;">Finance module in action!</h3>
+                <p style="color:var(--text-light); margin-bottom:1.5rem;">
+                    Sales order <strong>@_resultOrderNumber</strong> was created, and a journal entry was
+                    <strong>automatically generated</strong> by the Finance consumer.
+                </p>
+                <div class="alert alert--success">
+                    Double-entry posting: <strong>Debit</strong> Accounts Receivable (1100) &mdash;
+                    <strong>Credit</strong> Sales Revenue (4000) for <strong>@_resultTotal.ToString("C")</strong>.
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap;">
+                    <a href="/app/dashboard" class="btn btn--brand">Go to Dashboard</a>
+                    <a href="/app/finance" class="btn btn--outline" style="color:var(--brand); border-color:var(--brand);">View Journal Entries</a>
+                    <a href="/app/sales" class="btn btn--outline" style="color:var(--brand); border-color:var(--brand);">View Sales Orders</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (!_isAuthenticated && _currentStep == 0)
+            {
+                <div>
+                    <h3 style="margin-bottom:1rem; font-size:1.15rem;">Create your account</h3>
+                    <p style="color:var(--text-light); font-size:.875rem; margin-bottom:1.25rem;">
+                        Sign up to try Dynamix Finance — no credit card required.
+                    </p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name *</label>
+                            <input @bind="_regFirstName" placeholder="John" />
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name *</label>
+                            <input @bind="_regLastName" placeholder="Smith" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Work Email *</label>
+                        <input type="email" @bind="_regEmail" placeholder="john@company.com" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Password * <span style="font-weight:400; color:var(--text-light);">(min 8 characters)</span></label>
+                            <input type="password" @bind="_regPassword" placeholder="Create a password" />
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" @bind="_regConfirmPassword" placeholder="Confirm password" />
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (_currentStep == _overviewStep)
+            {
+                <div>
+                    <h3 style="margin-bottom:.5rem; font-size:1.15rem;">How it works</h3>
+                    <p style="color:var(--text-light); font-size:.9rem; margin-bottom:1.5rem;">
+                        Dynamix Finance automatically reacts to business events. When a sales order is placed,
+                        the Finance module creates a double-entry journal entry — no manual intervention required.
+                    </p>
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.5rem; margin-bottom:1rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:1rem;">EVENT FLOW</h4>
+                        <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; font-size:.9rem;">
+                            <span style="background:#E3F2FD; padding:.4rem .8rem; border-radius:4px; font-weight:600;">Sales Module</span>
+                            <span>→ publishes</span>
+                            <span style="background:#FFF3E0; padding:.4rem .8rem; border-radius:4px; font-weight:600;">SalesOrderPlaced</span>
+                            <span>→ consumed by</span>
+                            <span style="background:#E8F5E9; padding:.4rem .8rem; border-radius:4px; font-weight:600;">Finance Module</span>
+                        </div>
+                    </div>
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.5rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:.75rem;">CHART OF ACCOUNTS (SEED DATA)</h4>
+                        <table class="data-table" style="font-size:.85rem;">
+                            <thead><tr><th style="padding:.4rem .75rem;">Account</th><th style="padding:.4rem .75rem;">Name</th><th style="padding:.4rem .75rem;">Type</th></tr></thead>
+                            <tbody>
+                                <tr><td style="padding:.4rem .75rem;">1100</td><td style="padding:.4rem .75rem;">Accounts Receivable</td><td style="padding:.4rem .75rem;">Asset</td></tr>
+                                <tr><td style="padding:.4rem .75rem;">4000</td><td style="padding:.4rem .75rem;">Sales Revenue</td><td style="padding:.4rem .75rem;">Revenue</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            @if (_currentStep == _orderStep)
+            {
+                <div>
+                    <h3 style="margin-bottom:.5rem; font-size:1.15rem;">Create a sales order to trigger finance posting</h3>
+                    <p style="color:var(--text-light); font-size:.875rem; margin-bottom:1.25rem;">
+                        This will send an order to the Sales API. The Finance consumer will automatically pick it up.
+                    </p>
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <select @bind="_customerId">
+                            <option value="22222222-2222-2222-2222-222222222222">Acme Inc.</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Product</label>
+                            <input @bind="_productName" />
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" min="1" @bind="_quantity" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Price</label>
+                        <input type="number" step="0.01" @bind="_unitPrice" />
+                    </div>
+                    <div style="padding:1rem; background:#F3F2F1; border-radius:var(--radius); text-align:right; margin-top:.5rem;">
+                        <span style="font-size:.9rem; color:var(--text-light);">Amount:</span>
+                        <strong style="font-size:1.3rem; margin-left:.5rem;">@((_quantity * _unitPrice).ToString("C"))</strong>
+                    </div>
+                </div>
+            }
+
+            @if (_currentStep == _reviewStep)
+            {
+                <div>
+                    <h3 style="margin-bottom:1rem; font-size:1.15rem;">Review &amp; submit</h3>
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.25rem; margin-bottom:1rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:.75rem;">ORDER DETAILS</h4>
+                        <p><strong>Customer:</strong> Acme Inc.</p>
+                        <p><strong>Product:</strong> @_productName — @_quantity × @_unitPrice.ToString("C")</p>
+                        <p style="font-size:1.1rem; margin-top:.75rem;"><strong>Total: @((_quantity * _unitPrice).ToString("C"))</strong></p>
+                    </div>
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.25rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:.75rem;">EXPECTED JOURNAL ENTRY</h4>
+                        <table class="data-table" style="font-size:.85rem;">
+                            <thead><tr><th style="padding:.4rem .75rem;">Account</th><th style="padding:.4rem .75rem;">Debit</th><th style="padding:.4rem .75rem;">Credit</th></tr></thead>
+                            <tbody>
+                                <tr><td style="padding:.4rem .75rem;">1100 – Accounts Receivable</td><td style="padding:.4rem .75rem;">@((_quantity * _unitPrice).ToString("C"))</td><td style="padding:.4rem .75rem;">—</td></tr>
+                                <tr><td style="padding:.4rem .75rem;">4000 – Sales Revenue</td><td style="padding:.4rem .75rem;">—</td><td style="padding:.4rem .75rem;">@((_quantity * _unitPrice).ToString("C"))</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <div class="form-actions">
+                @if (_currentStep > 0)
+                {
+                    <button class="btn btn--outline" style="color:var(--text); border-color:#E1DFDD;" @onclick="PrevStep">← Back</button>
+                }
+                else { <span></span> }
+
+                @if (_currentStep < _reviewStep)
+                {
+                    <button class="btn btn--brand" @onclick="NextStep">Continue →</button>
+                }
+                else
+                {
+                    <button class="btn btn--green" @onclick="SubmitOrder" disabled="@_submitting">
+                        @if (_submitting) { <span class="spinner"></span> <span>Creating...</span> }
+                        else { <span>Create Order &amp; Post Journal</span> }
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private string[] _steps = { "Overview", "Order Details", "Review" };
+    private int _currentStep;
+    private string? _error;
+    private bool _submitting;
+    private bool _isAuthenticated;
+
+    private int _overviewStep;
+    private int _orderStep;
+    private int _reviewStep;
+    private int _successStep;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Registration fields (unauthenticated)
+    private string _regFirstName = "";
+    private string _regLastName = "";
+    private string _regEmail = "";
+    private string _regPassword = "";
+    private string _regConfirmPassword = "";
+
+    // Order fields
+    private string _customerId = "22222222-2222-2222-2222-222222222222";
+    private string _productName = "Consulting Services";
+    private decimal _quantity = 10;
+    private decimal _unitPrice = 150.00m;
+
+    private string _resultOrderNumber = "";
+    private decimal _resultTotal;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+        }
+
+        if (_isAuthenticated)
+        {
+            _steps = new[] { "Overview", "Order Details", "Review" };
+            _overviewStep = 0; _orderStep = 1; _reviewStep = 2; _successStep = 3;
+        }
+        else
+        {
+            _steps = new[] { "Account", "Overview", "Order Details", "Review" };
+            _overviewStep = 1; _orderStep = 2; _reviewStep = 3; _successStep = 4;
+        }
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (uri.Query.Contains("success=true"))
+        {
+            var qs = uri.Query.TrimStart('?').Split('&')
+                .Select(p => p.Split('=', 2))
+                .Where(p => p.Length == 2)
+                .ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+            qs.TryGetValue("orderNumber", out var on);
+            qs.TryGetValue("total", out var t);
+            _resultOrderNumber = on ?? "N/A";
+            _resultTotal = decimal.TryParse(t, out var d) ? d : 0;
+            _currentStep = _successStep;
+        }
+    }
+
+    private void NextStep()
+    {
+        _error = null;
+        if (!_isAuthenticated && _currentStep == 0)
+        {
+            if (string.IsNullOrWhiteSpace(_regFirstName) || string.IsNullOrWhiteSpace(_regLastName)
+                || string.IsNullOrWhiteSpace(_regEmail))
+            {
+                _error = "Please fill in all required fields.";
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(_regPassword) || _regPassword.Length < 8)
+            {
+                _error = "Password must be at least 8 characters.";
+                return;
+            }
+            if (_regPassword != _regConfirmPassword)
+            {
+                _error = "Passwords do not match.";
+                return;
+            }
+        }
+        _currentStep++;
+    }
+
+    private void PrevStep()
+    {
+        _error = null;
+        if (_currentStep > 0) _currentStep--;
+    }
+
+    private async Task SubmitOrder()
+    {
+        _submitting = true;
+        _error = null;
+        try
+        {
+            var client = HttpFactory.CreateClient("ErpApi");
+            var payload = new
+            {
+                CustomerId = Guid.Parse(_customerId),
+                Lines = new[] { new { ProductId = Guid.NewGuid(), Quantity = _quantity, UnitPrice = _unitPrice } }
+            };
+            var response = await client.PostAsJsonAsync("api/sales/orders", payload);
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = $"API returned {response.StatusCode}. Please try again.";
+                _submitting = false;
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<OrderResult>();
+            var orderNumber = result?.OrderNumber ?? "N/A";
+            var total = result?.Total ?? 0;
+
+            if (!_isAuthenticated)
+            {
+                var ok = await JS.InvokeAsync<bool>("dynamixTrialRegister",
+                    _regEmail, _regPassword, _regFirstName, _regLastName);
+                if (!ok)
+                {
+                    _error = "Account creation failed. The email may already be in use.";
+                    _submitting = false;
+                    return;
+                }
+                Nav.NavigateTo(
+                    $"/trial/finance?success=true&orderNumber={Uri.EscapeDataString(orderNumber)}&total={total}",
+                    forceLoad: true);
+                return;
+            }
+
+            _resultOrderNumber = orderNumber;
+            _resultTotal = total;
+            _currentStep = _successStep;
+        }
+        catch (Exception ex) { _error = $"Error: {ex.Message}"; }
+        _submitting = false;
+    }
+
+    private record OrderResult(Guid Id, string OrderNumber, decimal Total);
+}

@@ -1,0 +1,85 @@
+@page "/app/finance"
+@attribute [Authorize]
+@inject IHttpClientFactory HttpFactory
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <div>
+        <h2 style="margin-bottom:.25rem;">Journal Entries</h2>
+        <p style="color:var(--text-light); font-size:.9rem;">Double-entry journal entries auto-posted from business events.</p>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div style="padding:3rem; text-align:center;"><span class="spinner"></span> <span style="margin-left:.5rem; color:var(--text-light);">Loading journal entries...</span></div>
+}
+else if (_entries is null || _entries.Count == 0)
+{
+    <div class="data-table-wrap" style="padding:3rem; text-align:center;">
+        <p style="font-size:1.1rem; margin-bottom:.5rem;">No journal entries yet</p>
+        <p style="color:var(--text-light); margin-bottom:1rem;">Create a sales order to trigger automatic journal posting.</p>
+        <a href="/app/sales/create" class="btn btn--brand btn--sm">Create Sales Order</a>
+    </div>
+}
+else
+{
+    @foreach (var entry in _entries)
+    {
+        <div class="data-table-wrap" style="margin-bottom:1.25rem;">
+            <div class="data-table-wrap__header">
+                <div>
+                    <h3 style="font-size:.95rem;">Journal Entry</h3>
+                    <span style="font-size:.8rem; color:var(--text-light);">@entry.Date.ToString("MMM dd, yyyy HH:mm")</span>
+                </div>
+                <span class="badge badge--success">Posted</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Description</th>
+                        <th style="text-align:right;">Debit</th>
+                        <th style="text-align:right;">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in entry.Lines)
+                    {
+                        <tr>
+                            <td style="font-weight:600;">@FormatAccountId(line.AccountId)</td>
+                            <td>@line.Description</td>
+                            <td style="text-align:right;">@(line.Debit > 0 ? line.Debit.ToString("C") : "—")</td>
+                            <td style="text-align:right;">@(line.Credit > 0 ? line.Credit.ToString("C") : "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<JournalEntryRow>? _entries;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpFactory.CreateClient("ErpApi");
+            _entries = await client.GetFromJsonAsync<List<JournalEntryRow>>("api/finance/journal-entries") ?? new();
+        }
+        catch { _entries = new(); }
+        _loading = false;
+    }
+
+    private string FormatAccountId(Guid id)
+    {
+        if (id == Guid.Parse("00000000-0000-0000-0000-000000001100")) return "1100 – Accounts Receivable";
+        if (id == Guid.Parse("00000000-0000-0000-0000-000000004000")) return "4000 – Sales Revenue";
+        return id.ToString()[..8] + "...";
+    }
+
+    private record JournalLineRow(Guid AccountId, decimal Debit, decimal Credit, string Description);
+    private record JournalEntryRow(Guid Id, DateTime Date, List<JournalLineRow> Lines);
+}

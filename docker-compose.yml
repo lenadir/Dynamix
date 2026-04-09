@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  # ── SQL Server ────────────────────────────────────────────────────────
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  # ── RabbitMQ ──────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # ── Erp.Api ───────────────────────────────────────────────────────────
+  erp.api:
+    build:
+      context: .
+      dockerfile: src/Erp.Api/Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__ErpDatabase: "Server=mssql,1433;Database=DynamixErp;User Id=sa;Password=Your_password123;TrustServerCertificate=True"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+    depends_on:
+      - mssql
+      - rabbitmq
+
+  # ── Erp.Web (Blazor Server) ──────────────────────────────────────────
+  erp.web:
+    build:
+      context: .
+      dockerfile: src/Erp.Web/Dockerfile
+    ports:
+      - "5002:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ApiBaseUrl: "http://erp.api:80"
+    depends_on:
+      - erp.api
+
+volumes:
+  mssql_data:

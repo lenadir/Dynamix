@@ -1,0 +1,122 @@
+@page "/app/dashboard"
+@attribute [Authorize]
+@inject IHttpClientFactory HttpFactory
+
+<h2 style="margin-bottom:.25rem;">Dashboard</h2>
+<p style="color:var(--text-light); margin-bottom:1.5rem;">Welcome to Dynamix ERP — Demo Corporation Ltd.</p>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card__label">Sales Orders</div>
+        <div class="stat-card__value">@_orderCount</div>
+        <div class="stat-card__change">Active module</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Journal Entries</div>
+        <div class="stat-card__value">@_journalCount</div>
+        <div class="stat-card__change">Auto-posted</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">GL Accounts</div>
+        <div class="stat-card__value">2</div>
+        <div class="stat-card__change">AR &amp; Revenue</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Tenant</div>
+        <div class="stat-card__value" style="font-size:1rem;">Demo Corp</div>
+        <div class="stat-card__change">Multi-tenant active</div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+    <div class="data-table-wrap">
+        <div class="data-table-wrap__header">
+            <h3>Recent Sales Orders</h3>
+            <a href="/app/sales/create" class="btn btn--brand btn--sm">+ New Order</a>
+        </div>
+        @if (_orders is null)
+        {
+            <div style="padding:2rem; text-align:center; color:var(--text-light);"><span class="spinner"></span> Loading...</div>
+        }
+        else if (_orders.Count == 0)
+        {
+            <div style="padding:2rem; text-align:center; color:var(--text-light);">No orders yet. <a href="/app/sales/create">Create one</a>.</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead><tr><th>Order #</th><th>Date</th><th style="text-align:right;">Total</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var o in _orders.Take(5))
+                    {
+                        <tr>
+                            <td><a href="/app/sales">@o.OrderNumber</a></td>
+                            <td>@o.Date.ToString("MMM dd, yyyy")</td>
+                            <td style="text-align:right;">@o.Total.ToString("C")</td>
+                            <td><span class="badge badge--success">Confirmed</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="data-table-wrap">
+        <div class="data-table-wrap__header">
+            <h3>Recent Journal Entries</h3>
+            <a href="/app/finance" class="btn btn--sm btn--outline" style="color:var(--brand); border-color:var(--brand);">View All</a>
+        </div>
+        @if (_journals is null)
+        {
+            <div style="padding:2rem; text-align:center; color:var(--text-light);"><span class="spinner"></span> Loading...</div>
+        }
+        else if (_journals.Count == 0)
+        {
+            <div style="padding:2rem; text-align:center; color:var(--text-light);">No journal entries yet.</div>
+        }
+        else
+        {
+            <table class="data-table">
+                <thead><tr><th>Date</th><th>Lines</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var j in _journals.Take(5))
+                    {
+                        <tr>
+                            <td>@j.Date.ToString("MMM dd, yyyy")</td>
+                            <td>@j.LineCount line(s)</td>
+                            <td><span class="badge badge--success">Posted</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private List<OrderRow>? _orders;
+    private List<JournalRow>? _journals;
+    private int _orderCount;
+    private int _journalCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = HttpFactory.CreateClient("ErpApi");
+        try
+        {
+            _orders = await client.GetFromJsonAsync<List<OrderRow>>("api/sales/orders") ?? new();
+            _orderCount = _orders.Count;
+        }
+        catch { _orders = new(); }
+
+        try
+        {
+            _journals = await client.GetFromJsonAsync<List<JournalRow>>("api/finance/journal-entries") ?? new();
+            _journalCount = _journals.Count;
+        }
+        catch { _journals = new(); }
+    }
+
+    private record OrderRow(Guid Id, string OrderNumber, DateTime Date, decimal Total);
+    private record JournalRow(Guid Id, DateTime Date, int LineCount);
+}

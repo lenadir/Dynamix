@@ -1,0 +1,74 @@
+@page "/account/login"
+@model Erp.Web.Pages.Account.LoginModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In - Dynamix ERP</title>
+    <base href="/" />
+    <link href="/css/site.css" rel="stylesheet" />
+</head>
+<body style="background:var(--bg); min-height:100vh; display:flex; flex-direction:column;">
+    <!-- Nav -->
+    <nav class="dyn-nav">
+        <a href="/" class="dyn-nav__brand">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+            Dynamix
+        </a>
+        <a href="/account/register?returnUrl=@(Uri.EscapeDataString(Model.ReturnUrl ?? ""))" class="dyn-nav__cta">Create Account</a>
+    </nav>
+
+    <!-- Centered Login Card -->
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        <div class="trial-container" style="max-width:440px;">
+            <div class="trial-header">
+                <div style="font-size:2.5rem; margin-bottom:.5rem;">
+                    <svg width="48" height="48" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+                </div>
+                <h2>Sign in to Dynamix</h2>
+                <p>Access your ERP trial and manage your business.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="alert alert--error">@Model.Error</div>
+            }
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input id="email" name="email" type="email" required autofocus
+                           placeholder="you@@company.com" value="@Model.Email" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" required
+                           placeholder="Enter your password" />
+                </div>
+
+                <button type="submit" class="btn btn--brand"
+                        style="width:100%; justify-content:center; margin-top:.5rem;">
+                    Sign In
+                </button>
+            </form>
+
+            <p style="text-align:center; margin-top:1.5rem; font-size:.9rem; color:var(--text-light);">
+                Don't have an account?
+                <a href="/account/register?returnUrl=@(Uri.EscapeDataString(Model.ReturnUrl ?? ""))">Create one for free</a>
+            </p>
+
+            <div class="alert alert--info" style="margin-top:1.25rem;">
+                <strong>Demo credentials:</strong><br />
+                Email: <code style="background:#e8e6e4; padding:.1rem .4rem; border-radius:3px;">demo@@dynamix.com</code><br />
+                Password: <code style="background:#e8e6e4; padding:.1rem .4rem; border-radius:3px;">Password123!</code>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

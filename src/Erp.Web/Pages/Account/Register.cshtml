@@ -1,0 +1,87 @@
+@page "/account/register"
+@model Erp.Web.Pages.Account.RegisterModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account - Dynamix ERP</title>
+    <base href="/" />
+    <link href="/css/site.css" rel="stylesheet" />
+</head>
+<body style="background:var(--bg); min-height:100vh; display:flex; flex-direction:column;">
+    <!-- Nav -->
+    <nav class="dyn-nav">
+        <a href="/" class="dyn-nav__brand">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+            Dynamix
+        </a>
+        <a href="/account/login?returnUrl=@(Uri.EscapeDataString(Model.ReturnUrl ?? ""))" class="dyn-nav__cta">Sign In</a>
+    </nav>
+
+    <!-- Centered Register Card -->
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        <div class="trial-container" style="max-width:480px;">
+            <div class="trial-header">
+                <div style="font-size:2.5rem; margin-bottom:.5rem;">
+                    <svg width="48" height="48" viewBox="0 0 28 28" fill="none"><rect width="13" height="13" rx="2" fill="#0078D4"/><rect x="15" width="13" height="13" rx="2" fill="#50E6FF"/><rect y="15" width="13" height="13" rx="2" fill="#00B7C3"/><rect x="15" y="15" width="13" height="13" rx="2" fill="#0078D4" opacity=".6"/></svg>
+                </div>
+                <h2>Create your Dynamix account</h2>
+                <p>Start your free trial — no credit card required.</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="alert alert--error">@Model.Error</div>
+            }
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First name *</label>
+                        <input id="firstName" name="firstName" required autofocus
+                               placeholder="John" value="@Model.FirstName" />
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last name *</label>
+                        <input id="lastName" name="lastName" required
+                               placeholder="Smith" value="@Model.LastName" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Work email *</label>
+                    <input id="email" name="email" type="email" required
+                           placeholder="john@@company.com" value="@Model.Email" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password * <span style="font-weight:400; color:var(--text-light);">(min 8 characters)</span></label>
+                    <input id="password" name="password" type="password" required minlength="8"
+                           placeholder="Create a password" />
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm password *</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8"
+                           placeholder="Confirm your password" />
+                </div>
+
+                <button type="submit" class="btn btn--brand"
+                        style="width:100%; justify-content:center; margin-top:.5rem;">
+                    Create Account
+                </button>
+            </form>
+
+            <p style="text-align:center; margin-top:1.5rem; font-size:.9rem; color:var(--text-light);">
+                Already have an account?
+                <a href="/account/login?returnUrl=@(Uri.EscapeDataString(Model.ReturnUrl ?? ""))">Sign in</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

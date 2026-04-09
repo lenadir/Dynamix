@@ -1,0 +1,483 @@
+@page "/trial/sales"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<section class="section section--white" style="min-height:calc(100vh - var(--nav-height) - 200px);">
+    <div class="trial-container">
+        <div class="trial-header">
+            <div style="font-size:2rem; margin-bottom:.5rem;">💼</div>
+            <h2>Try Dynamix Sales</h2>
+            <p>Set up your trial in 4 easy steps — no credit card required.</p>
+        </div>
+
+        <!-- ═══ Stepper ═══ -->
+        <div class="stepper">
+            @for (int i = 0; i < _steps.Length; i++)
+            {
+                var idx = i;
+                var state = idx < _currentStep ? "stepper__step--done"
+                          : idx == _currentStep ? "stepper__step--active" : "";
+                <div class="stepper__step @state">
+                    <div class="stepper__circle">
+                        @if (idx < _currentStep) { <span>✓</span> }
+                        else { @(idx + 1) }
+                    </div>
+                    <span class="stepper__label">@_steps[idx]</span>
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert--error">@_error</div>
+        }
+
+        @if (_currentStep == 4)
+        {
+            <!-- ═══ Success ═══ -->
+            <div style="text-align:center; padding:2rem 0;">
+                <div style="font-size:3rem; margin-bottom:1rem;">🎉</div>
+                <h3 style="margin-bottom:.5rem;">Your trial order has been created!</h3>
+                <p style="color:var(--text-light); margin-bottom:.5rem;">Order Number: <strong>@_resultOrderNumber</strong></p>
+                <p style="color:var(--text-light); margin-bottom:1.5rem;">Total: <strong>@_resultTotal.ToString("C")</strong></p>
+                <div class="alert alert--success">
+                    A journal entry was automatically created in the Finance module via cross-module messaging.
+                </div>
+                <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap;">
+                    <a href="/app/dashboard" class="btn btn--brand">Go to Dashboard</a>
+                    <a href="/app/sales" class="btn btn--outline" style="color:var(--brand); border-color:var(--brand);">View Sales Orders</a>
+                    <a href="/app/finance" class="btn btn--outline" style="color:var(--brand); border-color:var(--brand);">View Journal Entries</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- ═══ Step 1: Your Info ═══ -->
+            @if (_currentStep == 0)
+            {
+                <div>
+                    <h3 style="margin-bottom:1rem; font-size:1.15rem;">@(_isAuthenticated ? "Tell us about yourself" : "Create your account")</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name *</label>
+                            <input @bind="_firstName" placeholder="John" />
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name *</label>
+                            <input @bind="_lastName" placeholder="Smith" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Work Email *</label>
+                        <input type="email" @bind="_email" placeholder="john@company.com" />
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name *</label>
+                        <input @bind="_companyName" placeholder="Contoso Ltd." />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" @bind="_phone" placeholder="+1-555-0100" />
+                        </div>
+                        <div class="form-group">
+                            <label>Country</label>
+                            <select @bind="_country">
+                                <option value="">Select...</option>
+                                <option>United States</option>
+                                <option>United Kingdom</option>
+                                <option>Canada</option>
+                                <option>Germany</option>
+                                <option>France</option>
+                                <option>Australia</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    @if (!_isAuthenticated)
+                    {
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Password * <span style="font-weight:400; color:var(--text-light);">(min 8 characters)</span></label>
+                                <input type="password" @bind="_password" placeholder="Create a password" />
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm Password *</label>
+                                <input type="password" @bind="_confirmPassword" placeholder="Confirm your password" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- ═══ Step 2: Company Details ═══ -->
+            @if (_currentStep == 1)
+            {
+                <div>
+                    <h3 style="margin-bottom:1rem; font-size:1.15rem;">Company details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Industry</label>
+                            <select @bind="_industry">
+                                <option value="">Select...</option>
+                                <option>Manufacturing</option>
+                                <option>Retail &amp; E-Commerce</option>
+                                <option>Professional Services</option>
+                                <option>Healthcare</option>
+                                <option>Technology</option>
+                                <option>Financial Services</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Company Size</label>
+                            <select @bind="_companySize">
+                                <option value="">Select...</option>
+                                <option>1-10 employees</option>
+                                <option>11-50 employees</option>
+                                <option>51-200 employees</option>
+                                <option>201-1000 employees</option>
+                                <option>1000+ employees</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Default Currency</label>
+                        <select @bind="_currency">
+                            <option>USD</option>
+                            <option>EUR</option>
+                            <option>GBP</option>
+                            <option>CAD</option>
+                            <option>AUD</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>What are you looking to improve?</label>
+                        <textarea rows="3" @bind="_goals" placeholder="e.g., Automate order processing, improve financial visibility..."></textarea>
+                    </div>
+                </div>
+            }
+
+            <!-- ═══ Step 3: Create Sample Order ═══ -->
+            @if (_currentStep == 2)
+            {
+                <div>
+                    <h3 style="margin-bottom:.5rem; font-size:1.15rem;">Create your first sales order</h3>
+                    <p style="color:var(--text-light); font-size:.875rem; margin-bottom:1.25rem;">
+                        Experience the Sales module live. We've pre-filled some sample data — customize it or keep the defaults.
+                    </p>
+                    <div class="alert alert--info">
+                        Demo Tenant: <strong>11111111-1111-1111-1111-111111111111</strong> (auto-applied)
+                    </div>
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <select @bind="_customerId">
+                            <option value="22222222-2222-2222-2222-222222222222">Acme Inc. (Seed Customer)</option>
+                        </select>
+                    </div>
+
+                    <h4 style="font-size:.95rem; margin:1.25rem 0 .75rem; color:var(--text-light);">Order Lines</h4>
+                    @for (int i = 0; i < _orderLines.Count; i++)
+                    {
+                        var lineIdx = i;
+                        <div class="form-row" style="margin-bottom:.75rem; align-items:end;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Product Name</label>
+                                <input @bind="_orderLines[lineIdx].ProductName" />
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Qty</label>
+                                <input type="number" min="1" @bind="_orderLines[lineIdx].Quantity" />
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-bottom:1rem;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Unit Price</label>
+                                <input type="number" step="0.01" @bind="_orderLines[lineIdx].UnitPrice" />
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Line Total</label>
+                                <input readonly value="@((_orderLines[lineIdx].Quantity * _orderLines[lineIdx].UnitPrice).ToString("C"))"
+                                       style="background:#F3F2F1;" />
+                            </div>
+                        </div>
+                    }
+                    <button class="btn btn--sm btn--outline" style="color:var(--brand); border-color:var(--brand);"
+                            @onclick="AddLine">+ Add Line</button>
+
+                    <div style="margin-top:1.25rem; padding:1rem; background:#F3F2F1; border-radius:var(--radius); text-align:right;">
+                        <span style="font-size:.9rem; color:var(--text-light);">Order Total:</span>
+                        <strong style="font-size:1.3rem; margin-left:.5rem;">@OrderTotal.ToString("C")</strong>
+                    </div>
+                </div>
+            }
+
+            <!-- ═══ Step 4: Review & Confirm ═══ -->
+            @if (_currentStep == 3)
+            {
+                <div>
+                    <h3 style="margin-bottom:1rem; font-size:1.15rem;">Review &amp; confirm</h3>
+
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.25rem; margin-bottom:1.25rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:.75rem;">YOUR INFORMATION</h4>
+                        <p><strong>@_firstName @_lastName</strong> &mdash; @_email</p>
+                        <p>@_companyName @(string.IsNullOrEmpty(_country) ? "" : $"({_country})")</p>
+                    </div>
+
+                    <div style="background:#F9F9FB; border-radius:var(--radius); padding:1.25rem; margin-bottom:1.25rem;">
+                        <h4 style="font-size:.9rem; color:var(--text-light); margin-bottom:.75rem;">ORDER SUMMARY</h4>
+                        <table class="data-table" style="font-size:.9rem;">
+                            <thead>
+                                <tr>
+                                    <th style="padding:.5rem;">Product</th>
+                                    <th style="padding:.5rem; text-align:right;">Qty</th>
+                                    <th style="padding:.5rem; text-align:right;">Price</th>
+                                    <th style="padding:.5rem; text-align:right;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var line in _orderLines)
+                                {
+                                    <tr>
+                                        <td style="padding:.5rem;">@line.ProductName</td>
+                                        <td style="padding:.5rem; text-align:right;">@line.Quantity</td>
+                                        <td style="padding:.5rem; text-align:right;">@line.UnitPrice.ToString("C")</td>
+                                        <td style="padding:.5rem; text-align:right;">@((line.Quantity * line.UnitPrice).ToString("C"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div style="text-align:right; margin-top:.75rem; font-size:1.1rem;">
+                            <strong>Total: @OrderTotal.ToString("C")</strong>
+                        </div>
+                    </div>
+
+                    <div class="alert alert--info">
+                        By clicking <strong>Submit Order</strong>, a real API call will be made to Dynamix Sales, and a
+                        journal entry will automatically be created in Dynamix Finance via cross-module messaging.
+                    </div>
+                </div>
+            }
+
+            <!-- ═══ Navigation Buttons ═══ -->
+            <div class="form-actions">
+                @if (_currentStep > 0)
+                {
+                    <button class="btn btn--outline" style="color:var(--text); border-color:#E1DFDD;" @onclick="PrevStep">
+                        ← Back
+                    </button>
+                }
+                else
+                {
+                    <span></span>
+                }
+
+                @if (_currentStep < 3)
+                {
+                    <button class="btn btn--brand" @onclick="NextStep">
+                        Continue →
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn--green" @onclick="SubmitOrder" disabled="@_submitting">
+                        @if (_submitting)
+                        {
+                            <span class="spinner"></span>
+                            <span>Submitting...</span>
+                        }
+                        else
+                        {
+                            <span>Submit Order</span>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private string[] _steps = { "Your Info", "Company", "Sample Order", "Review" };
+    private int _currentStep;
+    private string? _error;
+    private bool _submitting;
+    private bool _isAuthenticated;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Step 1
+    private string _firstName = "";
+    private string _lastName = "";
+    private string _email = "";
+    private string _companyName = "";
+    private string _phone = "";
+    private string _country = "";
+    private string _password = "";
+    private string _confirmPassword = "";
+
+    // Step 2
+    private string _industry = "";
+    private string _companySize = "";
+    private string _currency = "USD";
+    private string _goals = "";
+
+    // Step 3
+    private string _customerId = "22222222-2222-2222-2222-222222222222";
+    private List<OrderLineModel> _orderLines = new()
+    {
+        new() { ProductName = "Enterprise Widget", Quantity = 5, UnitPrice = 99.95m },
+        new() { ProductName = "Premium Support Pack", Quantity = 1, UnitPrice = 249.00m }
+    };
+
+    // Result
+    private string _resultOrderNumber = "";
+    private decimal _resultTotal;
+
+    private decimal OrderTotal => _orderLines.Sum(l => l.Quantity * l.UnitPrice);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+            if (_isAuthenticated)
+            {
+                var name = state.User.Identity?.Name ?? "";
+                var parts = name.Split(' ', 2);
+                if (parts.Length > 0 && string.IsNullOrEmpty(_firstName)) _firstName = parts[0];
+                if (parts.Length > 1 && string.IsNullOrEmpty(_lastName)) _lastName = parts[1];
+                _email = state.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? _email;
+            }
+        }
+
+        if (!_isAuthenticated)
+            _steps = new[] { "Create Account", "Company", "Sample Order", "Review" };
+
+        // Check for success redirect (after registration + order creation)
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (uri.Query.Contains("success=true"))
+        {
+            var qs = uri.Query.TrimStart('?').Split('&')
+                .Select(p => p.Split('=', 2))
+                .Where(p => p.Length == 2)
+                .ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+            qs.TryGetValue("orderNumber", out var on);
+            qs.TryGetValue("total", out var t);
+            _resultOrderNumber = on ?? "N/A";
+            _resultTotal = decimal.TryParse(t, out var d) ? d : 0;
+            _currentStep = 4;
+        }
+    }
+
+    private void NextStep()
+    {
+        _error = null;
+        if (_currentStep == 0)
+        {
+            if (string.IsNullOrWhiteSpace(_firstName) || string.IsNullOrWhiteSpace(_lastName)
+                || string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_companyName))
+            {
+                _error = "Please fill in all required fields (marked with *).";
+                return;
+            }
+            if (!_isAuthenticated)
+            {
+                if (string.IsNullOrWhiteSpace(_password) || _password.Length < 8)
+                {
+                    _error = "Password must be at least 8 characters.";
+                    return;
+                }
+                if (_password != _confirmPassword)
+                {
+                    _error = "Passwords do not match.";
+                    return;
+                }
+            }
+        }
+        if (_currentStep == 2 && _orderLines.Count == 0)
+        {
+            _error = "Please add at least one order line.";
+            return;
+        }
+        _currentStep++;
+    }
+
+    private void PrevStep()
+    {
+        _error = null;
+        if (_currentStep > 0) _currentStep--;
+    }
+
+    private void AddLine()
+    {
+        _orderLines.Add(new OrderLineModel { ProductName = "New Product", Quantity = 1, UnitPrice = 0 });
+    }
+
+    private async Task SubmitOrder()
+    {
+        _submitting = true;
+        _error = null;
+        try
+        {
+            var client = HttpFactory.CreateClient("ErpApi");
+            var payload = new
+            {
+                CustomerId = Guid.Parse(_customerId),
+                Lines = _orderLines.Select(l => new
+                {
+                    ProductId = Guid.NewGuid(),
+                    l.Quantity,
+                    l.UnitPrice
+                }).ToArray()
+            };
+            var response = await client.PostAsJsonAsync("api/sales/orders", payload);
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = $"API returned {response.StatusCode}. Please try again.";
+                _submitting = false;
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<OrderResult>();
+            var orderNumber = result?.OrderNumber ?? "N/A";
+            var total = result?.Total ?? 0;
+
+            if (!_isAuthenticated)
+            {
+                var ok = await JS.InvokeAsync<bool>("dynamixTrialRegister",
+                    _email, _password, _firstName, _lastName);
+                if (!ok)
+                {
+                    _error = "Account creation failed. The email may already be in use. Try signing in instead.";
+                    _submitting = false;
+                    return;
+                }
+                Nav.NavigateTo(
+                    $"/trial/sales?success=true&orderNumber={Uri.EscapeDataString(orderNumber)}&total={total}",
+                    forceLoad: true);
+                return;
+            }
+
+            _resultOrderNumber = orderNumber;
+            _resultTotal = total;
+            _currentStep = 4;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error: {ex.Message}";
+        }
+        _submitting = false;
+    }
+
+    private class OrderLineModel
+    {
+        public string ProductName { get; set; } = "";
+        public decimal Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+    }
+
+    private record OrderResult(Guid Id, string OrderNumber, decimal Total);
+}

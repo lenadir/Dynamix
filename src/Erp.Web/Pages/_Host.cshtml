@@ -1,0 +1,29 @@
+@page "/"
+@namespace Erp.Web.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamix ERP</title>
+    <base href="~/" />
+    <link href="css/site.css" rel="stylesheet" />
+</head>
+<body>
+    <component type="typeof(Erp.Web.App)" render-mode="ServerPrerendered" />
+    <script src="_framework/blazor.server.js"></script>
+    <script>
+        window.dynamixTrialRegister = async function (email, password, firstName, lastName) {
+            try {
+                const resp = await fetch('/account/trial-register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, firstName, lastName })
+                });
+                return resp.ok;
+            } catch { return false; }
+        };
+    </script>
+</body>
+</html>
